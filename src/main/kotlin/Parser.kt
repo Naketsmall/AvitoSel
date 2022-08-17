@@ -28,11 +28,37 @@ class Parser(private val link: String, private val hook: String,
         }
         Thread.sleep(SLEEP_CONST)
     }
-    /*
-    fun checkFeed(driver: ChromeDriver){
-        driver.get(link)
-    }*/
 
+    fun checkFeed(driver: ChromeDriver){
+        try {
+            driver.get(link)
+            parseElements()
+        } catch (e: HttpStatusException) {
+            e.printStackTrace()
+        } finally {
+            Thread.sleep(SLEEP_CONST)
+        }
+
+    }
+
+    private fun parseElements() {
+        val cur = driver.findElementsByClassName("iva-item-content-rejJg")
+        for (el in 0 until checked.size){
+            try {
+                val path = cur[el].findElement(By.xpath(".//div[1]/a")).getAttribute("href")
+                if (path !in checked) {
+                    println("\n" + path)
+                    sendMessage(cur[el])
+                    checked.removeLast()
+                    checked.addFirst(path)
+                }
+            } catch (e: java.lang.IndexOutOfBoundsException) {
+                e.printStackTrace()
+                break
+            }
+        }
+        print(".")
+    }
 
     override fun run() {
         running = true
@@ -41,28 +67,14 @@ class Parser(private val link: String, private val hook: String,
         while (running) {
             try {
                 driver.navigate().refresh()
+                parseElements()
             } catch (e: HttpStatusException) {
                 e.printStackTrace()
                 continue
             } finally {
                 Thread.sleep(SLEEP_CONST)
             }
-            val cur = driver.findElementsByClassName("iva-item-content-rejJg")
-            for (el in 0 until checked.size){
-                try {
-                    val path = cur[el].findElement(By.xpath(".//div[1]/a")).getAttribute("href")
-                    if (path !in checked) {
-                        println("\n" + path)
-                        sendMessage(cur[el])
-                        checked.removeLast()
-                        checked.addFirst(path)
-                    }
-                } catch (e: java.lang.IndexOutOfBoundsException) {
-                    e.printStackTrace()
-                    break
-                }
-            }
-            print(".")
+
         }
 
     }
